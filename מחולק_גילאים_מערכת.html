@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מערכת פילוח לקוחות | רוזן ענק הביטוח</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
+
+  :root {
+    --teal:      #1F6B73;
+    --teal-lt:   #A8D5D9;
+    --teal-pale: #D4EEF0;
+    --amber:     #7B4F00;
+    --amber-lt:  #F5C6A0;
+    --navy:      #2E4057;
+    --navy-lt:   #B8C9D9;
+    --purple:    #4A235A;
+    --purple-lt: #D7BDE2;
+    --bg:        #F0F4F5;
+    --surface:   #FFFFFF;
+    --text:      #1a2a2e;
+    --muted:     #6b8a90;
+    --border:    #d0e2e4;
+    --success:   #2d7a4f;
+    --error:     #c0392b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .logo-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: var(--teal);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 26px; height: 26px; fill: white; }
+  h1 {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--teal);
+    letter-spacing: -0.5px;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 4px;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(31,107,115,0.10);
+    padding: 36px;
+    width: 100%;
+    max-width: 580px;
+  }
+
+  /* ── Drop Zone ── */
+  .drop-zone {
+    border: 2.5px dashed var(--border);
+    border-radius: 16px;
+    padding: 44px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--bg);
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--teal);
+    background: var(--teal-pale);
+  }
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-icon {
+    width: 56px; height: 56px;
+    background: var(--teal-pale);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .drop-icon svg { width: 28px; height: 28px; stroke: var(--teal); fill: none; stroke-width: 1.8; }
+  .drop-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .drop-hint {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .drop-formats {
+    display: inline-block;
+    margin-top: 12px;
+    background: var(--teal-pale);
+    color: var(--teal);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  /* ── File Selected ── */
+  .file-selected {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--teal-pale);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-top: 20px;
+  }
+  .file-icon {
+    width: 40px; height: 40px;
+    background: var(--teal);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .file-icon svg { width: 22px; height: 22px; fill: white; }
+  .file-info { flex: 1; }
+  .file-name { font-size: 14px; font-weight: 700; color: var(--text); }
+  .file-size { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .file-remove {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); padding: 4px;
+    border-radius: 6px; transition: color 0.2s;
+  }
+  .file-remove:hover { color: var(--error); }
+  .file-remove svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  /* ── Rules Box ── */
+  .rules-box {
+    background: #f8fcfc;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-top: 24px;
+  }
+  .rules-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--teal);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rule-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .rule-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  /* ── Button ── */
+  .btn-generate {
+    width: 100%;
+    margin-top: 28px;
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 16px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .btn-generate:hover:not(:disabled) {
+    background: #165960;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(31,107,115,0.3);
+  }
+  .btn-generate:disabled {
+    background: #a0bfc2;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-generate svg { width: 20px; height: 20px; fill: none; stroke: white; stroke-width: 2; }
+
+  /* ── Progress ── */
+  .progress-wrap {
+    margin-top: 24px;
+    display: none;
+  }
+  .progress-wrap.visible { display: block; }
+  .progress-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--teal);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .progress-bar-bg {
+    height: 8px;
+    background: var(--teal-pale);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--teal);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .progress-steps {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .step-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .step-row.active { color: var(--text); font-weight: 600; }
+  .step-row.done { color: var(--success); }
+  .step-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .step-row.active .step-dot { background: var(--teal); }
+  .step-row.done  .step-dot { background: var(--success); }
+
+  /* ── Result ── */
+  .result-box {
+    margin-top: 24px;
+    display: none;
+  }
+  .result-box.visible { display: block; }
+  .result-success {
+    background: #eaf7ef;
+    border: 1.5px solid #a3d9b8;
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .result-icon-wrap {
+    width: 48px; height: 48px;
+    background: var(--success);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .result-icon-wrap svg { width: 26px; height: 26px; stroke: white; fill: none; stroke-width: 2.5; }
+  .result-text-main { font-size: 15px; font-weight: 700; color: var(--success); }
+  .result-text-sub  { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .btn-download {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 20px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-download:hover { background: #236040; }
+  .btn-download svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
+
+  .result-error {
+    background: #fdf0ee;
+    border: 1.5px solid #f0b8b0;
+    border-radius: 14px;
+    padding: 20px;
+    font-size: 14px;
+    color: var(--error);
+    font-weight: 600;
+  }
+
+  /* ── Stats Grid ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .stat-card {
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .stat-num { font-size: 22px; font-weight: 900; }
+  .stat-lbl { font-size: 12px; font-weight: 500; margin-top: 2px; }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 32px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-bar">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg>
+    </div>
+    <h1>מערכת פילוח לקוחות</h1>
+  </div>
+  <p class="subtitle">רוזן ענק הביטוח · חלוקה אוטומטית לפי קטגוריה וגיל</p>
+</header>
+
+<div class="card">
+  <!-- Drop Zone -->
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept=".xls,.xlsx">
+    <div class="drop-icon">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </div>
+    <div class="drop-title">גרור קובץ הפקה לכאן</div>
+    <div class="drop-hint">או לחץ לבחירת קובץ</div>
+    <span class="drop-formats">XLS · XLSX</span>
+  </div>
+
+  <!-- File Selected -->
+  <div class="file-selected" id="fileSelected" style="display:none">
+    <div class="file-icon">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="file-info">
+      <div class="file-name" id="fileName">—</div>
+      <div class="file-size" id="fileSize">—</div>
+    </div>
+    <button class="file-remove" id="removeFile" title="הסר קובץ">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <!-- Rules -->
+  <div class="rules-box">
+    <div class="rules-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      כללי הפילוח
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot" style="background:var(--teal)"></div>
+      <div><b>רכב</b> (כולל החלפות) — גיליון לכל פלח: עד 21 | 22-35 | 36-51 | 52-64 | 65+</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot" style="background:var(--amber)"></div>
+      <div><b>דירה</b> — עד 50 | מעל 50</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot" style="background:var(--navy)"></div>
+      <div><b>משכנתא + מוקד לידים חיים</b> — מאוחד | עד 50 | מעל 50</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot" style="background:var(--error)"></div>
+      <div><b>לא מורשה</b> לדואר שיווקי — מוסר מהדוח</div>
+    </div>
+  </div>
+
+  <!-- Generate Button -->
+  <button class="btn-generate" id="generateBtn" disabled>
+    <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    הפק דוח
+  </button>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span id="progressLabel">מעבד...</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-steps" id="progressSteps"></div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-box" id="resultBox"></div>
+</div>
+
+<footer>הנתונים מעובדים מקומית בדפדפן · לא נשלח מידע לשום שרת</footer>
+
+<script>
+const REF_DATE = new Date(2026, 1, 1); // Feb 1 2026
+
+function calcAge(dateVal) {
+  if (!dateVal) return null;
+  let d;
+  if (typeof dateVal === 'number') {
+    // Excel serial date
+    d = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
+  } else if (dateVal instanceof Date) {
+    d = dateVal;
+  } else {
+    d = new Date(dateVal);
+  }
+  if (isNaN(d.getTime())) return null;
+  let age = REF_DATE.getFullYear() - d.getFullYear();
+  const m = REF_DATE.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && REF_DATE.getDate() < d.getDate())) age--;
+  return age;
+}
+
+function getCategory(s) {
+  if (!s) return 'אחר';
+  s = String(s);
+  if (s.includes('רכב') || s.includes('רכ ') || s.includes('החלפות')) return 'רכב';
+  if (s.includes('דירה')) return 'דירה';
+  if (s.includes('משכנתא')) return 'משכנתא';
+  if (s.includes('מוקד לידים חיים')) return 'מוקד לידים חיים';
+  return 'אחר';
+}
+
+function getAgentFirst(s) {
+  if (!s) return '';
+  return String(s).trim().split(/\s+/)[0];
+}
+
+function ageBracketCar(age) {
+  if (age === null) return 'ללא גיל';
+  if (age <= 21) return 'עד 21';
+  if (age <= 35) return '22-35';
+  if (age <= 51) return '36-51';
+  if (age <= 64) return '52-64';
+  return '65 ומעלה';
+}
+
+function ageBracket50(age) {
+  if (age === null) return 'ללא גיל';
+  return age <= 50 ? 'עד 50' : 'מעל 50';
+}
+
+// ── SheetJS helpers ─────────────────────────────────────────────
+const COLORS = {
+  רכב:   { hdr: '1F6B73', rowA: 'A8D5D9', rowB: 'D4EEF0' },
+  דירה:  { hdr: '7B4F00', rowA: 'F5C6A0', rowB: 'FAE3CC' },
+  combined: { hdr: '2E4057', rowA: 'B8C9D9', rowB: 'DAE5EE' },
+};
+
+function hex(c) { return { rgb: c }; }
+
+function makeCell(v, bold, bgColor, isHeader) {
+  const cell = { v, t: typeof v === 'number' ? 'n' : 's' };
+  cell.s = {
+    font:      { name: 'Arial', sz: isHeader ? 11 : 10, bold: !!bold, color: isHeader ? hex('FFFFFF') : hex('1a2a2e') },
+    fill:      { patternType: 'solid', fgColor: hex(bgColor) },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: !!isHeader, readingOrder: 2 },
+    border: {
+      top:    { style: 'thin', color: hex('AAAAAA') },
+      bottom: { style: 'thin', color: hex('AAAAAA') },
+      left:   { style: 'thin', color: hex('AAAAAA') },
+      right:  { style: 'thin', color: hex('AAAAAA') },
+    }
+  };
+  return cell;
+}
+
+function buildSheet(rows, colorSet) {
+  const headers = ['שם לקוח', 'שם סוכן', 'גיל', 'טלפון'];
+  const colW    = [{ wch: 24 }, { wch: 14 }, { wch: 8 }, { wch: 16 }];
+  const aoa     = [];
+
+  aoa.push(headers.map((h, i) => makeCell(h, true, colorSet.hdr, true)));
+
+  const sorted = [...rows].sort((a, b) => {
+    const ag = (a.agent || '').localeCompare(b.agent || '', 'he');
+    if (ag !== 0) return ag;
+    return (a.name || '').localeCompare(b.name || '', 'he');
+  });
+
+  sorted.forEach((row, i) => {
+    const bg = i % 2 === 0 ? colorSet.rowA : colorSet.rowB;
+    const ageVal = row.age !== null ? row.age : '';
+    aoa.push([
+      makeCell(row.name  || '', false, bg, false),
+      makeCell(row.agent || '', true,  bg, false),
+      makeCell(ageVal,          false, bg, false),
+      makeCell(row.phone || '', false, bg, false),
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = colW;
+  ws['!rows'] = [{ hpt: 28 }];
+  sorted.forEach((_, i) => { ws['!rows'].push({ hpt: 17 }); });
+
+  // Auto-filter
+  ws['!autofilter'] = { ref: `A1:D${sorted.length + 1}` };
+
+  return ws;
+}
+
+// ── Main processing ──────────────────────────────────────────────
+let selectedFile = null;
+let outputBlob   = null;
+let outputName   = '';
+
+const dropZone    = document.getElementById('dropZone');
+const fileInput   = document.getElementById('fileInput');
+const fileSelected= document.getElementById('fileSelected');
+const fileNameEl  = document.getElementById('fileName');
+const fileSizeEl  = document.getElementById('fileSize');
+const removeBtn   = document.getElementById('removeFile');
+const generateBtn = document.getElementById('generateBtn');
+const progressWrap= document.getElementById('progressWrap');
+const progressFill= document.getElementById('progressFill');
+const progressLbl = document.getElementById('progressLabel');
+const progressPct = document.getElementById('progressPct');
+const stepsEl     = document.getElementById('progressSteps');
+const resultBox   = document.getElementById('resultBox');
+
+function setFile(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xls','xlsx'].includes(ext)) {
+    alert('יש לבחור קובץ XLS או XLSX בלבד'); return;
+  }
+  selectedFile = file;
+  fileNameEl.textContent = file.name;
+  fileSizeEl.textContent = (file.size / 1024).toFixed(1) + ' KB';
+  dropZone.style.display = 'none';
+  fileSelected.style.display = 'flex';
+  generateBtn.disabled = false;
+  resultBox.innerHTML = '';
+  resultBox.classList.remove('visible');
+  progressWrap.classList.remove('visible');
+}
+
+fileInput.addEventListener('change', e => setFile(e.target.files[0]));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  setFile(e.dataTransfer.files[0]);
+});
+removeBtn.addEventListener('click', () => {
+  selectedFile = null;
+  fileInput.value = '';
+  fileSelected.style.display = 'none';
+  dropZone.style.display = 'block';
+  generateBtn.disabled = true;
+  resultBox.innerHTML = '';
+  resultBox.classList.remove('visible');
+  progressWrap.classList.remove('visible');
+});
+
+const STEPS = [
+  'קורא קובץ...',
+  'מסנן לקוחות לא מורשים...',
+  'מחשב גילאים ופלחים...',
+  'בונה גיליונות Excel...',
+  'מסיים ומוריד...'
+];
+
+function setProgress(step, pct) {
+  progressFill.style.width = pct + '%';
+  progressLbl.textContent  = STEPS[step] || '';
+  progressPct.textContent  = pct + '%';
+  stepsEl.innerHTML = STEPS.map((s, i) => {
+    const cls = i < step ? 'done' : i === step ? 'active' : '';
+    return `<div class="step-row ${cls}"><div class="step-dot"></div><span>${s}</span></div>`;
+  }).join('');
+}
+
+generateBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
+  generateBtn.disabled = true;
+  resultBox.innerHTML  = '';
+  resultBox.classList.remove('visible');
+  progressWrap.classList.add('visible');
+
+  try {
+    setProgress(0, 5);
+    await sleep(100);
+
+    const buf = await selectedFile.arrayBuffer();
+    const wb_in = XLSX.read(buf, { type: 'array', cellDates: true });
+    const sheetName = wb_in.SheetNames[0];
+    const rawData = XLSX.utils.sheet_to_json(wb_in.Sheets[sheetName], { defval: null });
+
+    setProgress(1, 25);
+    await sleep(80);
+
+    // Detect column names
+    const sample = rawData[0] || {};
+    const keys = Object.keys(sample);
+
+    const colAgent  = keys.find(k => k.includes('סוכן'));
+    const colName   = keys.find(k => k.includes('שם מועמד') || k.includes('שם לקוח'));
+    const colBirth  = keys.find(k => k.includes('תאריך לידה') || k.includes('לידה'));
+    const colPhone  = keys.find(k => k.includes('סלולארי') || k.includes('טלפון'));
+    const colEmail  = keys.find(k => k.includes('דואר שיווקי') || k.includes('דוא'));
+
+    // Filter non-permitted
+    const filtered = rawData.filter(row => {
+      const perm = colEmail ? String(row[colEmail] || '').trim() : '';
+      return perm !== 'לא מורשה';
+    });
+
+    setProgress(2, 50);
+    await sleep(80);
+
+    // Build rows
+    const buckets = {};
+
+    filtered.forEach(row => {
+      const agent    = colAgent ? getAgentFirst(row[colAgent]) : '';
+      const fullSochen = colAgent ? String(row[colAgent] || '') : '';
+      const name     = colName  ? String(row[colName]  || '') : '';
+      const phone    = colPhone ? String(row[colPhone] || '') : '';
+      const age      = calcAge(colBirth ? row[colBirth] : null);
+      const cat      = getCategory(fullSochen);
+
+      const entry = { name, agent, age, phone };
+
+      if (cat === 'רכב') {
+        const brk = ageBracketCar(age);
+        const key  = `רכב | ${brk}`;
+        if (!buckets[key]) buckets[key] = { rows: [], color: COLORS.רכב, order: ['רכב | עד 21','רכב | 22-35','רכב | 36-51','רכב | 52-64','רכב | 65 ומעלה','רכב | ללא גיל'].indexOf(key) };
+        buckets[key].rows.push(entry);
+      } else if (cat === 'דירה') {
+        const brk = ageBracket50(age);
+        const key  = `דירה | ${brk}`;
+        if (!buckets[key]) buckets[key] = { rows: [], color: COLORS.דירה, order: 100 + ['דירה | עד 50','דירה | מעל 50','דירה | ללא גיל'].indexOf(key) };
+        buckets[key].rows.push(entry);
+      } else if (cat === 'משכנתא' || cat === 'מוקד לידים חיים') {
+        const brk = ageBracket50(age);
+        const key  = `משכנתא ולידים | ${brk}`;
+        if (!buckets[key]) buckets[key] = { rows: [], color: COLORS.combined, order: 200 + ['משכנתא ולידים | עד 50','משכנתא ולידים | מעל 50','משכנתא ולידים | ללא גיל'].indexOf(key) };
+        buckets[key].rows.push(entry);
+      }
+    });
+
+    setProgress(3, 75);
+    await sleep(80);
+
+    // Build workbook
+    const wb_out = XLSX.utils.book_new();
+    const sortedKeys = Object.keys(buckets).sort((a, b) => buckets[a].order - buckets[b].order);
+
+    sortedKeys.forEach(key => {
+      if (buckets[key].rows.length === 0) return;
+      const ws = buildSheet(buckets[key].rows, buckets[key].color);
+      XLSX.utils.book_append_sheet(wb_out, ws, key);
+    });
+
+    setProgress(4, 95);
+    await sleep(80);
+
+    const baseName = selectedFile.name.replace(/\.[^.]+$/, '');
+    outputName = `${baseName}_מחולק.xlsx`;
+    const wbOut = XLSX.write(wb_out, { bookType: 'xlsx', type: 'array', cellStyles: true });
+    outputBlob = new Blob([wbOut], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    setProgress(4, 100);
+    await sleep(200);
+
+    progressWrap.classList.remove('visible');
+
+    // Build stats
+    const removedCount = rawData.length - filtered.length;
+    const carTotal  = sortedKeys.filter(k => k.startsWith('רכב')).reduce((s, k) => s + buckets[k].rows.length, 0);
+    const homeTotal = sortedKeys.filter(k => k.startsWith('דירה')).reduce((s, k) => s + buckets[k].rows.length, 0);
+    const combTotal = sortedKeys.filter(k => k.startsWith('משכנתא')).reduce((s, k) => s + buckets[k].rows.length, 0);
+
+    const url = URL.createObjectURL(outputBlob);
+    resultBox.innerHTML = `
+      <div class="result-success">
+        <div class="result-icon-wrap">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <div class="result-text-main">הדוח מוכן! ${sortedKeys.length} גיליונות</div>
+          <div class="result-text-sub">${filtered.length.toLocaleString()} לקוחות · הוצאו ${removedCount} לא מורשים</div>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card" style="background:var(--teal-pale)">
+          <div class="stat-num" style="color:var(--teal)">${carTotal.toLocaleString()}</div>
+          <div class="stat-lbl" style="color:var(--teal)">🚗 רכב</div>
+        </div>
+        <div class="stat-card" style="background:var(--amber-lt)">
+          <div class="stat-num" style="color:var(--amber)">${homeTotal.toLocaleString()}</div>
+          <div class="stat-lbl" style="color:var(--amber)">🏠 דירה</div>
+        </div>
+        <div class="stat-card" style="background:var(--navy-lt)">
+          <div class="stat-num" style="color:var(--navy)">${combTotal.toLocaleString()}</div>
+          <div class="stat-lbl" style="color:var(--navy)">🏦 משכנתא + לידים</div>
+        </div>
+        <div class="stat-card" style="background:#fdf0ee">
+          <div class="stat-num" style="color:var(--error)">${removedCount}</div>
+          <div class="stat-lbl" style="color:var(--error)">⛔ הוצאו</div>
+        </div>
+      </div>
+      <a class="btn-download" href="${url}" download="${outputName}">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        הורד ${outputName}
+      </a>
+    `;
+    resultBox.classList.add('visible');
+  } catch (err) {
+    progressWrap.classList.remove('visible');
+    resultBox.innerHTML = `<div class="result-error">⚠️ שגיאה בעיבוד הקובץ: ${err.message}</div>`;
+    resultBox.classList.add('visible');
+    console.error(err);
+  }
+
+  generateBtn.disabled = false;
+});
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
